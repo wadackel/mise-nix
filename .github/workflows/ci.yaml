@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: ./.github/actions/setup-nix
+      - name: Flake check (current system)
+        shell: bash
+        run: nix develop -c just check
+      - name: Evaluate all supported systems
+        shell: bash
+        run: nix develop -c just check-eval-all
+      - name: Format check
+        shell: bash
+        run: nix develop -c just fmt-check
+      - name: Build mise for current system
+        shell: bash
+        run: nix develop -c just build
+      - name: Smoke run mise --version
+        shell: bash
+        run: |
+          set -euo pipefail
+          # grep -oE is portable across BSD (macOS) and GNU grep, and the
+          # runner has it on PATH; rg is only available inside `nix develop`.
+          actual=$(./result/bin/mise --version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+          expected=$(jq -re '.version' sources.json)
+          printf 'mise --version: actual=%s expected=%s\n' "$actual" "$expected"
+          [ "$actual" = "$expected" ] || { echo "version mismatch" >&2; exit 1; }
+      - name: Deno unit tests
+        shell: bash
+        run: nix develop -c deno test scripts/
