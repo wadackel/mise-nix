@@ -19,17 +19,21 @@ concurrency:
 jobs:
   update:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # Every step below carries its own timeout and they sum to less than this,
+    # so a hang always trips the step rather than the job. That distinction
+    # matters: a step timeout fails the step and the notification at the end
+    # still fires, while a job timeout is a cancel and would pass over it
+    # silently — the exact "fails unnoticed" mode this workflow guards against.
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        timeout-minutes: 2
       - uses: ./.github/actions/setup-nix
+        timeout-minutes: 5
       - name: Run update script
         id: update
         shell: bash
-        # Kept under the job timeout so a hung update trips this step first. A
-        # step timeout fails the step, which keeps the notification below
-        # firing; a job timeout is a cancel and would pass over it silently.
-        timeout-minutes: 10
+        timeout-minutes: 8
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -47,10 +51,12 @@ jobs:
       - name: Verify flake
         if: steps.update.outputs.result == 'changed'
         shell: bash
+        timeout-minutes: 5
         run: nix develop -c just check
       - name: Commit and push
         if: steps.update.outputs.result == 'changed'
         shell: bash
+        timeout-minutes: 2
         run: |
           set -euo pipefail
           tag=$(jq -r .tag sources.json)
@@ -69,8 +75,39 @@ jobs:
           git add sources.json
           git commit -m "chore: bump mise to ${tag}"
           git push
+      - name: Close failure issue
+        if: success()
+        timeout-minutes: 2
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const label = "update-failed";
+            const { owner, repo } = context.repo;
+            const runUrl = `https://github.com/${owner}/${repo}/actions/runs/${context.runId}`;
+
+            // A recovery has to retire the open issue. Rewrites are silent, so
+            // one left open would absorb the next outage as an in-place edit
+            // and reach nobody — creation is the only notifying event.
+            const { data } = await github.rest.issues.listForRepo({
+              owner,
+              repo,
+              state: "open",
+              labels: label,
+              per_page: 100,
+            });
+            for (const issue of data.filter((entry) => !entry.pull_request)) {
+              await github.rest.issues.update({
+                owner,
+                repo,
+                issue_number: issue.number,
+                body: `${issue.body ?? ""}\n\nRecovered: ${runUrl}`,
+                state: "closed",
+                state_reason: "completed",
+              });
+            }
       - name: Open failure issue
         if: failure()
+        timeout-minutes: 2
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
@@ -99,10 +136,12 @@ jobs:
               repo,
               state: "open",
               labels: label,
-              per_page: 1,
+              per_page: 100,
             });
             // listForRepo also returns pull requests, and overwriting a body is
-            // destructive in a way that adding a comment was not.
+            // destructive in a way that adding a comment was not. Narrowing the
+            // page to 1 would defeat the filter: a labelled PR sorting first
+            // would hide the tracking issue and spawn a duplicate every run.
             const existing = data.filter((entry) => !entry.pull_request)[0];
 
             if (existing) {
