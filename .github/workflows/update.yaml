@@ -24,7 +24,7 @@ jobs:
     # matters: a step timeout fails the step and the notification at the end
     # still fires, while a job timeout is a cancel and would pass over it
     # silently — the exact "fails unnoticed" mode this workflow guards against.
-    timeout-minutes: 25
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         timeout-minutes: 2
@@ -75,6 +75,36 @@ jobs:
           git add sources.json
           git commit -m "chore: bump mise to ${tag}"
           git push
+      - name: Close failure issue
+        if: success()
+        timeout-minutes: 2
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const label = "update-failed";
+            const { owner, repo } = context.repo;
+            const runUrl = `https://github.com/${owner}/${repo}/actions/runs/${context.runId}`;
+
+            // A recovery has to retire the open issue. Rewrites are silent, so
+            // one left open would absorb the next outage as an in-place edit
+            // and reach nobody — creation is the only notifying event.
+            const { data } = await github.rest.issues.listForRepo({
+              owner,
+              repo,
+              state: "open",
+              labels: label,
+              per_page: 100,
+            });
+            for (const issue of data.filter((entry) => !entry.pull_request)) {
+              await github.rest.issues.update({
+                owner,
+                repo,
+                issue_number: issue.number,
+                body: `${issue.body ?? ""}\n\nRecovered: ${runUrl}`,
+                state: "closed",
+                state_reason: "completed",
+              });
+            }
       - name: Open failure issue
         if: failure()
         timeout-minutes: 2
