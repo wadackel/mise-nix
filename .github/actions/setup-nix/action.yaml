@@ -3,7 +3,7 @@ description: Install Nix
 
 # No Nix store cache step here: a partially restored store keeps its database
 # intact while dropping paths, so every later `nix develop` dies on the first
-# missing one. Cold runs cost about a minute for this repo. See CLAUDE.md.
+# missing one. Cold runs cost about a minute for this repo. See AGENTS.md.
 runs:
   using: composite
   steps:
