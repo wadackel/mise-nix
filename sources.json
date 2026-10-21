@@ -1,22 +1,22 @@
 {
-  "version": "2026.10.15",
-  "tag": "v2026.10.15",
+  "version": "2026.10.17",
+  "tag": "v2026.10.17",
   "platforms": {
     "aarch64-darwin": {
-      "url": "https://github.com/jdx/mise/releases/download/v2026.10.15/mise-v2026.10.15-macos-arm64.tar.gz",
-      "hash": "sha256-ikSlb3IyPHdymKHVq9iP/SHQ/KGfqxzMzTiakSN09pw="
+      "url": "https://github.com/jdx/mise/releases/download/v2026.10.17/mise-v2026.10.17-macos-arm64.tar.gz",
+      "hash": "sha256-18UMFoNSSnZCYJhszJxBwN5eH81JFxS1ZAtle3Z4GvY="
     },
     "x86_64-darwin": {
-      "url": "https://github.com/jdx/mise/releases/download/v2026.10.15/mise-v2026.10.15-macos-x64.tar.gz",
-      "hash": "sha256-I31Sl4VTjt3DwiQyIPPmPlAS1z/CPxYWwF9MJ6EpG70="
+      "url": "https://github.com/jdx/mise/releases/download/v2026.10.17/mise-v2026.10.17-macos-x64.tar.gz",
+      "hash": "sha256-5CQYEA4veB+b4Auf6qYDeOd1UXQfrs7MK/NgmSxUEMg="
     },
     "aarch64-linux": {
-      "url": "https://github.com/jdx/mise/releases/download/v2026.10.15/mise-v2026.10.15-linux-arm64-musl.tar.gz",
-      "hash": "sha256-yz14lmgLAonpgJfNsMcPCYm91Tg9z3lfbQSmyrcDBio="
+      "url": "https://github.com/jdx/mise/releases/download/v2026.10.17/mise-v2026.10.17-linux-arm64-musl.tar.gz",
+      "hash": "sha256-dFoaVAHEIJCVOo2kkyQ9XGZv/8LJj5o97jO9ivx3qe4="
     },
     "x86_64-linux": {
-      "url": "https://github.com/jdx/mise/releases/download/v2026.10.15/mise-v2026.10.15-linux-x64-musl.tar.gz",
-      "hash": "sha256-4AwJ249NEefI1BehJYTi0Sl1g/y8uh2huYZr0koK9QM="
+      "url": "https://github.com/jdx/mise/releases/download/v2026.10.17/mise-v2026.10.17-linux-x64-musl.tar.gz",
+      "hash": "sha256-VNxfGg3hS933Ck2Cc2A2R8FA7t2LnQg6j3PKE6moL1M="
     }
   }
 }
